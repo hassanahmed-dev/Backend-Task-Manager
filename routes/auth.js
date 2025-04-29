@@ -189,7 +189,7 @@ router.post('/forgot-password', async (req, res) => {
     await user.save();
 
     // Create reset URL
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://hassanahmedtaskmanager.vercel.app'}/reset-password/${resetToken}`;
 
     // Try sending the email separately
     try {
@@ -273,4 +273,3 @@ module.exports = {
   router,
   transporter
 };
-
