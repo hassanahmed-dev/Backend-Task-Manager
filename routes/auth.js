@@ -139,6 +139,15 @@ router.post('/login', async (req, res) => {
   }
 });
 
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,       // .env se Gmail address
+    pass: process.env.EMAIL_PASS        // .env se App Password
+  }
+});
+
+
 // Forgot Password - no authentication middleware
 router.post('/forgot-password', async (req, res) => {
   try {
@@ -176,11 +185,23 @@ router.post('/forgot-password', async (req, res) => {
     
     // For development, return the reset URL directly
     // In production, you would send an email with this URL
-    return res.status(200).json({
-      success: true,
-      message: 'Password reset instructions sent. Please check your email.',
-      resetUrl: process.env.NODE_ENV !== 'production' ? resetUrl : undefined
+    await transporter.sendMail({
+      from: `"Task Manager" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Reset Your Password",
+      html: `
+        <h3>Reset your password</h3>
+        <p>Click below to reset your password:</p>
+        <a href="${resetUrl}">${resetUrl}</a>
+        <p>This link expires in 10 minutes.</p>
+      `
     });
+    
+    res.status(200).json({
+      success: true,
+      message: 'Password reset instructions sent to your email.'
+    });
+    
   } catch (err) {
     console.error('Forgot password error:', err);
     res.status(500).json({ 
