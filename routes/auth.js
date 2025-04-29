@@ -195,7 +195,7 @@ router.post('/forgot-password', async (req, res) => {
     try {
       await transporter.sendMail({
         from: `"Task Manager" <${process.env.EMAIL_USER}>`,
-        to: "technicaladam0@gmail.com",
+        to: user.email,
         subject: "Reset Your Password",
         html: `
           <h3>Reset your password</h3>
