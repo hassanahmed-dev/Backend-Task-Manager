@@ -149,6 +149,7 @@ const transporter = nodemailer.createTransport({
 
 
 // Forgot Password - no authentication middleware
+// Forgot Password - no authentication middleware
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -158,6 +159,7 @@ router.post('/forgot-password', async (req, res) => {
         message: 'Email is required' 
       });
     }
+
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ 
@@ -168,40 +170,47 @@ router.post('/forgot-password', async (req, res) => {
 
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
-    
+
     // Hash the token and set to resetPasswordToken field
     user.resetPasswordToken = crypto
       .createHash('sha256')
       .update(resetToken)
       .digest('hex');
-    
+
     // Set token expire time (10 minutes)
     user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
-    
+
     await user.save();
-    
+
     // Create reset URL
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
-    
-    // For development, return the reset URL directly
-    // In production, you would send an email with this URL
-    await transporter.sendMail({
-      from: `"Task Manager" <${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: "Reset Your Password",
-      html: `
-        <h3>Reset your password</h3>
-        <p>Click below to reset your password:</p>
-        <a href="${resetUrl}">${resetUrl}</a>
-        <p>This link expires in 10 minutes.</p>
-      `
-    });
-    
+
+    // Try sending the email separately
+    try {
+      await transporter.sendMail({
+        from: `"Task Manager" <${process.env.EMAIL_USER}>`,
+        to: user.email,
+        subject: "Reset Your Password",
+        html: `
+          <h3>Reset your password</h3>
+          <p>Click below to reset your password:</p>
+          <a href="${resetUrl}">${resetUrl}</a>
+          <p>This link expires in 10 minutes.</p>
+        `
+      });
+    } catch (emailErr) {
+      console.error('Failed to send email:', emailErr);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send email. Please try again later.'
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: 'Password reset instructions sent to your email.'
     });
-    
+
   } catch (err) {
     console.error('Forgot password error:', err);
     res.status(500).json({ 
@@ -210,6 +219,7 @@ router.post('/forgot-password', async (req, res) => {
     });
   }
 });
+
 
 // Reset Password - no authentication middleware
 router.post('/reset-password/:token', async (req, res) => {
