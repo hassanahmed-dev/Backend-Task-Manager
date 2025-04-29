@@ -147,15 +147,6 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-transporter.verify((error, success) => {
-  if (error) {
-    console.log("Transporter Error:", error);
-  } else {
-    console.log("Transporter is ready to send messages");
-  }
-});
-
-
 // Forgot Password - no authentication middleware
 router.post('/forgot-password', async (req, res) => {
   try {

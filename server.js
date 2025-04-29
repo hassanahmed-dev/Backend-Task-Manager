@@ -23,6 +23,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/tasks');
 const userRoutes = require('./routes/user');
+// Import transporter from auth
+const { transporter } = require('./routes/auth');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
@@ -51,11 +53,22 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('Connected to MongoDB');
     
-    // Start server
+    // Define port BEFORE using it
     const PORT = process.env.PORT || 5000;
+
+    // Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+    
+      transporter.verify((error, success) => {
+        if (error) {
+          console.error('Transporter Error:', error);
+        } else {
+          console.log('Transporter is ready to send messages');
+        }
+      });
     });
+    
   })
   .catch(err => {
     console.error('MongoDB connection error:', err);
