@@ -53,13 +53,11 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('Connected to MongoDB');
     
-    // Define port BEFORE using it
     const PORT = process.env.PORT || 5000;
-
-    // Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     
+      console.log("Verifying transporter...");
       transporter.verify((error, success) => {
         if (error) {
           console.error('Transporter Error:', error);
@@ -68,7 +66,6 @@ mongoose.connect(process.env.MONGO_URI)
         }
       });
     });
-    
   })
   .catch(err => {
     console.error('MongoDB connection error:', err);

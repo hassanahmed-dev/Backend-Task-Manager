@@ -142,8 +142,16 @@ router.post('/login', async (req, res) => {
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER,       // .env se Gmail address
-    pass: process.env.EMAIL_PASS        // .env se App Password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('Transporter Error:', error);
+  } else {
+    console.log('Transporter is ready to send messages');
   }
 });
 
