@@ -147,13 +147,6 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-transporter.verify((error, success) => {
-  if (error) {
-    console.log("Transporter Error:", error);
-  } else {
-    console.log("Transporter is ready to send messages");
-  }
-});
 
 // Forgot Password - no authentication middleware
 router.post('/forgot-password', async (req, res) => {
@@ -195,7 +188,7 @@ router.post('/forgot-password', async (req, res) => {
     try {
       await transporter.sendMail({
         from: `"Task Manager" <${process.env.EMAIL_USER}>`,
-        to: user.email,
+        to: "technicalhasankhan.1@gmail.com",
         subject: "Reset Your Password",
         html: `
           <h3>Reset your password</h3>
