@@ -160,90 +160,114 @@ router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
-      return res.status(400).json({ success: false, message: 'Email is required' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Email is required' 
+      });
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'No user found with this email address.' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'No user found with this email address.' 
+      });
     }
 
+    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Hash the token and set to resetPasswordToken field
+    user.resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    // Set token expire time (10 minutes)
     user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
     await user.save();
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    // Create reset URL
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
 
-    await sendEmail(
-      user.email,
-      "Reset Your Password",
-      `
-        <h3>Reset your password</h3>
-        <p>Click below to reset your password:</p>
-        <a href="${resetUrl}">${resetUrl}</a>
-        <p>This link expires in 10 minutes.</p>
-      `
-    );
+    // Try sending the email separately
+    try {
+      await transporter.sendMail({
+        from: `"Task Manager" <${process.env.EMAIL_USER}>`,
+        to: user.email,
+        subject: "Reset Your Password",
+        html: `
+          <h3>Reset your password</h3>
+          <p>Click below to reset your password:</p>
+          <a href="${resetUrl}">${resetUrl}</a>
+          <p>This link expires in 10 minutes.</p>
+        `
+      });
+    } catch (emailErr) {
+      console.error('Failed to send email:', emailErr);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send email. Please try again later.'
+      });
+    }
 
-    return res.status(200).json({ success: true, message: 'Reset link sent to your email.' });
+    res.status(200).json({
+      success: true,
+      message: 'Password reset instructions sent to your email.'
+    });
 
   } catch (err) {
     console.error('Forgot password error:', err);
-    return res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Something went wrong. Please try again.' 
+    });
   }
 });
-
 
 
 // Reset Password - no authentication middleware
 router.post('/reset-password/:token', async (req, res) => {
   try {
-    const { password } = req.body;
-    if (!password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Password is required.'
-      });
-    }
-
+    // Get hashed token
     const resetPasswordToken = crypto
       .createHash('sha256')
       .update(req.params.token)
       .digest('hex');
-
+    
+    // Find user with valid token
     const user = await User.findOne({
       resetPasswordToken,
       resetPasswordExpire: { $gt: Date.now() }
     });
-
+    
     if (!user) {
-      return res.status(400).json({
+      return res.status(400).json({ 
         success: false,
-        message: 'Invalid or expired token. Please request a new password reset link.'
+        message: 'Invalid or expired token. Please request a new password reset link.' 
       });
     }
-
-    user.password = password; // or hash if middleware not used
+    
+    // Set new password
+    user.password = req.body.password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
-
+    
     await user.save();
-
-    return res.status(200).json({
+    
+    res.status(200).json({ 
       success: true,
-      message: 'Password has been reset successfully. Please login with your new password.'
+      message: 'Password has been reset successfully. Please login with your new password.' 
     });
-
   } catch (err) {
     console.error('Reset password error:', err);
-    return res.status(500).json({
+    res.status(500).json({ 
       success: false,
-      message: 'Something went wrong. Please try again.'
+      message: 'Something went wrong. Please try again.' 
     });
   }
 });
-
 
 module.exports = {
   router,
