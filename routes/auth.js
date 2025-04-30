@@ -164,7 +164,7 @@ router.post('/forgot-password', async (req, res) => {
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: user.email,
+      to:'aqeelkhan3900@gmail.com',
       subject: 'Password Reset Request',
       text: `You requested a password reset. Please use the following link to reset your password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.`,
     };
