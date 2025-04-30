@@ -9,7 +9,7 @@ const app = express();
 // Basic middlewares
 
 const corsOptions = {
-  origin: 'http://hassanahmedtaskmanager.vercel.app', // Your frontend domain
+  origin: 'https://hassanahmedtaskmanager.vercel.app', // Your frontend domain
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed methods
   allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
 };
