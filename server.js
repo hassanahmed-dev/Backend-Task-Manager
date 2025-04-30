@@ -8,7 +8,7 @@ const app = express();
 
 // Basic middlewares
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://hassanahmedtaskmanager.vercel.app',
+  origin: 'https://hassanahmedtaskmanager.vercel.app',
   credentials: true
 }));
 
@@ -58,13 +58,16 @@ mongoose.connect(process.env.MONGO_URI)
       console.log(`Server running on port ${PORT}`);
     
       console.log("Verifying transporter...");
-      transporter.verify((error, success) => {
-        if (error) {
-          console.error('Transporter Error:', error);
-        } else {
-          console.log('Transporter is ready to send messages');
-        }
-      });
+      if (transporter) {
+        transporter.verify((error, success) => {
+          if (error) {
+            console.error('Email Transport Error:', error);
+          } else {
+            console.log('Server is ready to send emails');
+          }
+        });
+      }
+      
     });
   })
   .catch(err => {

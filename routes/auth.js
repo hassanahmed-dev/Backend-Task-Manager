@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
   secure: true, // true for SSL, false for TLS
   auth: {
     user: "technicalhassankhan.1@gmail.com", // Your email address
-    pass: "ekwobofbhfprntss", // Your Gmail App Password or SMTP password
+    pass: "ekwo bofb hfpr ntss", // Your Gmail App Password or SMTP password
   },
 });
 
@@ -166,7 +166,35 @@ router.post('/forgot-password', async (req, res) => {
       from: "technicalhassankhan.1@gmail.com",
       to: user.email,
       subject: 'Password Reset Request',
-      text: `You requested a password reset. Please use the following link to reset your password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.`,
+      html:
+      `<!DOCTYPE html>
+      <html lang="en" >
+      <head>
+        <meta charset="UTF-8">
+        <title>Hassan Ahmed Management Solution - Reset Password</title>
+        
+      
+      </head>
+      <body>
+      <!-- partial:index.partial.html -->
+      <div style="font-family: Helvetica,Arial,sans-serif;min-width:1000px;overflow:auto;line-height:2">
+        <div style="margin:50px auto;width:70%;padding:20px 0">
+          <div style="border-bottom:1px solid #eee">
+            <a href="" style="font-size:1.4em;color: #001529;text-decoration:none;font-weight:600">Hassan Ahmed Management Solution</a>
+          </div>
+          <p style="font-size:1.1em">Hi,</p>
+          <p>Thank you for choosing Hassan Ahmed Management Solution. Use the following link to Reset your Password Recovery Procedure. Link is valid for 1 hour.</p>
+          <h2 style="background: #001529;margin: 0 auto;width: max-content;padding: 0 10px;color: #fff;border-radius: 4px;">${resetUrl}</h2>
+          <p style="font-size:0.9em;">Regards,<br />Hassan Ahmed Management Soluion</p>
+          <hr style="border:none;border-top:1px solid #eee" />
+          <div style="float:right;padding:8px 0;color:#aaa;font-size:0.8em;line-height:1;font-weight:300">
+          </div>
+        </div>
+      </div>
+      <!-- partial -->
+        
+      </body>
+      </html>`,
     };
   await transporter.sendMail(mailOptions);
   console.log('Email sent successfully');
