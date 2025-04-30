@@ -3,19 +3,22 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
+const authRoutes = require('./routes/auth');
+const taskRoutes = require('./routes/tasks');
+const userRoutes = require('./routes/user');
 
 const app = express();
 
 // Basic middlewares
 
 const corsOptions = {
-  origin: 'https://hassanahmedtaskmanager.vercel.app', // Your frontend domain
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed methods
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+    origin: "https://hassanahmedtaskmanager.vercel.app", // Frontend URL
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 };
-
-// Enable CORS with the options
 app.use(cors(corsOptions));
+
 
 // Body parser middleware
 app.use(express.json());
@@ -24,10 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 // Static files middleware for uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Routes
-const authRoutes = require('./routes/auth');
-const taskRoutes = require('./routes/tasks');
-const userRoutes = require('./routes/user');
+
 // Import transporter from auth
 const { transporter } = require('./routes/auth');
 
