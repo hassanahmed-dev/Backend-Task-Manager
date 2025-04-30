@@ -15,10 +15,13 @@ if (!process.env.JWT_SECRET) {
 
 // Configure Nodemailer with environment variables
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: "Gmail",
+  host: 'smtp.gmail.com', // Manually specifying the Gmail SMTP server
+  port: 465, // SSL connection port (for Gmail)
+  secure: true, // true for SSL, false for TLS
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.EMAIL_USER, // Your email address
+    pass: process.env.EMAIL_PASSWORD, // Your Gmail App Password or SMTP password
   },
 });
 
