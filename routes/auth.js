@@ -20,8 +20,8 @@ const transporter = nodemailer.createTransport({
   port: 465, // SSL connection port (for Gmail)
   secure: true, // true for SSL, false for TLS
   auth: {
-    user: process.env.EMAIL_USER, // Your email address
-    pass: process.env.EMAIL_PASS, // Your Gmail App Password or SMTP password
+    user: "technicalhassankhan.1@gmail.com", // Your email address
+    pass: "ekwobofbhfprntss", // Your Gmail App Password or SMTP password
   },
 });
 
@@ -163,7 +163,7 @@ router.post('/forgot-password', async (req, res) => {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: "technicalhassankhan.1@gmail.com",
       to:'aqeelkhan3900@gmail.com',
       subject: 'Password Reset Request',
       text: `You requested a password reset. Please use the following link to reset your password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.`,
