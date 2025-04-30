@@ -7,10 +7,15 @@ require('dotenv').config();
 const app = express();
 
 // Basic middlewares
-app.use(cors({
-  origin: 'https://hassanahmedtaskmanager.vercel.app',
-  credentials: true
-}));
+
+const corsOptions = {
+  origin: 'https://hassanahmedtaskmanager.vercel.app', // Your frontend domain
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+};
+
+// Enable CORS with the options
+app.use(cors(corsOptions));
 
 // Body parser middleware
 app.use(express.json());
