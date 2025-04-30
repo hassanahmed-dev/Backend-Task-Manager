@@ -7,14 +7,10 @@ require('dotenv').config();
 const app = express();
 
 // Basic middlewares
-app.use(
-  cors({
-    origin: "https://hassanahmedtaskmanager.vercel.app",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true
-  })
-);
+app.use(cors({
+  origin: 'https://hassanahmedtaskmanager.vercel.app',
+  credentials: true
+}));
 
 // Body parser middleware
 app.use(express.json());
@@ -59,10 +55,8 @@ mongoose.connect(process.env.MONGO_URI)
     
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
-      console.log("Verifying transporter...");
       console.log(`Server running on port ${PORT}`);
       console.log("Verifying transporter...");
-
       if (transporter) {
         transporter.verify((error, success) => {
           if (error) {
