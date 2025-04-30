@@ -29,10 +29,19 @@ const transporter = nodemailer.createTransport({
 router.post('/signup', async (req, res) => {
   try {
     const { username, email, password } = req.body;
+
     if (!username || !email || !password) {
       return res.status(400).json({
         success: false,
         error: 'Please provide all required fields',
+      });
+    }
+
+    // Password must be at least 6 characters
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: 'Password must be at least 6 characters long',
       });
     }
 
@@ -46,10 +55,8 @@ router.post('/signup', async (req, res) => {
 
     const user = await User.create({ username, email, password });
 
-    // Generate token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    // Create user response without sensitive data
     const userResponse = {
       id: user._id,
       username: user.username,
@@ -211,20 +218,32 @@ router.post('/reset-password/:token', async (req, res) => {
   const { password } = req.body;
 
   try {
-    const user = await User.findOne({ resetPasswordToken: token });
-    if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
+    // Find users whose token has not expired
+    const users = await User.find({ resetPasswordExpire: { $gt: Date.now() } });
 
-    const isValid = await user.isResetTokenValid(token);
-    if (!isValid) return res.status(400).json({ message: 'Invalid or expired token' });
+    // Manually check token match
+    let validUser = null;
+    for (const user of users) {
+      const isMatch = await bcrypt.compare(token, user.resetPasswordToken);
+      if (isMatch) {
+        validUser = user;
+        break;
+      }
+    }
 
-    user.password = password;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    await user.save();
+    if (!validUser) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Set new password and clear token fields
+    validUser.password = password;
+    validUser.resetPasswordToken = undefined;
+    validUser.resetPasswordExpire = undefined;
+    await validUser.save();
 
     res.status(200).json({ message: 'Password successfully reset' });
   } catch (err) {
-    console.error(err);
+    console.error('Reset password error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
