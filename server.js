@@ -1,15 +1,17 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const dotenv = require("dotenv");
 const path = require('path');
-require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/tasks');
 const userRoutes = require('./routes/user');
 
+dotenv.config();
 const app = express();
 
 // Basic middlewares
+app.use(express.json());
 
 const corsOptions = {
     origin: "https://hassanahmedtaskmanager.vercel.app", // Frontend URL
@@ -20,8 +22,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 
-// Body parser middleware
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Static files middleware for uploaded images
