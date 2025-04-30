@@ -7,11 +7,12 @@ require('dotenv').config();
 const app = express();
 
 // Basic middlewares
-app.use(cors({
-  origin: 'https://hassanahmedtaskmanager.vercel.app',
-  credentials: true
-}));
-
+app.use(
+  cors({
+    origin: "https://hassanahmedtaskmanager.vercel.app",
+    credentials: true,
+  })
+);
 // Body parser middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
