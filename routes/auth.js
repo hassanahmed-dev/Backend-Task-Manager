@@ -4,6 +4,7 @@ const User = require('../models/User');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+require('dotenv').config();
 const nodemailer = require('nodemailer');
 
 // Check for JWT_SECRET and provide a fallback for development
