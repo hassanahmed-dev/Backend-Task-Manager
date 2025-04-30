@@ -29,19 +29,10 @@ const transporter = nodemailer.createTransport({
 router.post('/signup', async (req, res) => {
   try {
     const { username, email, password } = req.body;
-
     if (!username || !email || !password) {
       return res.status(400).json({
         success: false,
         error: 'Please provide all required fields',
-      });
-    }
-
-    // Password must be at least 6 characters
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        error: 'Password must be at least 6 characters long',
       });
     }
 
@@ -55,8 +46,10 @@ router.post('/signup', async (req, res) => {
 
     const user = await User.create({ username, email, password });
 
+    // Generate token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
+    // Create user response without sensitive data
     const userResponse = {
       id: user._id,
       username: user.username,
