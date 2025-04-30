@@ -166,8 +166,7 @@ router.post('/forgot-password', async (req, res) => {
       from: "technicalhassankhan.1@gmail.com",
       to: user.email,
       subject: 'Password Reset Request',
-      html:
-      `<!DOCTYPE html>
+      html:`<!DOCTYPE html>
       <html lang="en" >
       <head>
         <meta charset="UTF-8">
