@@ -7,11 +7,6 @@ const crypto = require('crypto');
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 
-// Check for JWT_SECRET and provide a fallback for development
-if (!process.env.JWT_SECRET) {
-  console.warn('WARNING: JWT_SECRET is not defined in environment variables');
-  process.env.JWT_SECRET = 'fallback_development_secret_key_do_not_use_in_production';
-}
 
 // Configure Nodemailer with environment variables
 const transporter = nodemailer.createTransport({
