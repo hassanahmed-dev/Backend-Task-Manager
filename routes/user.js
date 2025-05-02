@@ -2,91 +2,137 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { updateUserProfile, uploadProfileImage, removeProfileImage } = require('../controllers/userController');
+const { v2: cloudinary } = require('cloudinary');
 
-// Create uploads directory if it doesn't exist
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Configure Cloudinary
+try {
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    throw new Error('Missing Cloudinary environment variables');
+  }
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  console.log('Cloudinary configured successfully');
+} catch (error) {
+  console.error('Cloudinary configuration error:', error.message);
+  throw error;
 }
 
-// Set up storage configuration for multer
-const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function(req, file, cb) {
-    // Create a unique filename with userId, timestamp and original extension
-    const userId = req.user.id;
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `user_${userId}_${uniqueSuffix}${ext}`);
-  }
-});
-
-// File filter for image uploads
-const fileFilter = (req, file, cb) => {
-  // Accept only image files
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed!'), false);
-  }
+// Helper for error responses
+const sendError = (res, status, message, err) => {
+  console.error(`Error: ${message}`, err);
+  res.status(status).json({
+    success: false,
+    message,
+    ...(process.env.NODE_ENV === 'development' && { error: err.message }),
+  });
 };
-
-// Configure multer upload
-const upload = multer({ 
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB max file size
-  },
-  fileFilter: fileFilter
-});
 
 // Get user profile
 router.get('/', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     res.json(user);
   } catch (err) {
-    console.error('Error fetching user profile:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
+    sendError(res, 500, 'Server error fetching profile', err);
   }
 });
 
 // Update user profile
-router.put('/update', auth, updateUserProfile);
+router.put('/update', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-// Upload profile image
-router.post('/upload-profile-image', auth, upload.single('profileImage'), uploadProfileImage);
+    const fields = ['firstName', 'lastName', 'age', 'gender', 'phone', 'country', 'city', 'address', 'qualification'];
+    fields.forEach(field => {
+      if (req.body[field] !== undefined) user[field] = req.body[field];
+    });
 
-// Remove profile image
-router.delete('/remove-profile-image', auth, removeProfileImage);
-
-// Serve profile images
-router.get('/uploads/:filename', (req, res) => {
-  const filename = req.params.filename;
-  const imagePath = path.join(uploadDir, filename);
-  
-  // Check if file exists
-  if (fs.existsSync(imagePath)) {
-    return res.sendFile(imagePath);
-  } else {
-    return res.status(404).send('Image not found');
+    await user.save();
+    const updatedUser = await User.findById(req.user.id).select('-password');
+    res.json({ success: true, message: 'Profile updated', user: updatedUser });
+  } catch (err) {
+    sendError(res, 500, 'Server error updating profile', err);
   }
 });
 
-module.exports = router; 
+// Upload profile image
+router.post('/upload-profile-image', auth, async (req, res) => {
+  try {
+    const { profileImage } = req.body;
+    console.log('Received profileImage length:', profileImage?.length);
+
+    if (!profileImage) {
+      return res.status(400).json({ success: false, message: 'No image provided' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    console.log('Uploading to Cloudinary for user:', req.user.id);
+    
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(profileImage, {
+      folder: `users/${req.user.id}`,
+      public_id: `profile_${req.user.id}_${Date.now()}`,
+      resource_type: 'image',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
+      transformation: [{ width: 200, height: 200, crop: 'fill' }],
+    }).catch(err => {
+      console.error('Cloudinary upload error:', err);
+      throw new Error(`Cloudinary upload failed: ${err.message}`);
+    });
+
+    console.log('Cloudinary upload successful:', result.secure_url);
+
+    user.profileImage = result.secure_url;
+    await user.save().catch(err => {
+      console.error('User save error:', err);
+      throw new Error(`Failed to save user: ${err.message}`);
+    });
+
+    res.json({
+      success: true,
+      message: 'Profile image uploaded',
+      imageUrl: result.secure_url,
+      user: { ...user.toJSON(), password: undefined },
+    });
+  } catch (err) {
+    sendError(res, 500, 'Server error uploading image', err);
+  }
+});
+
+// Remove profile image
+router.delete('/remove-profile-image', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    if (user.profileImage) {
+      const publicId = user.profileImage.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(`users/${req.user.id}/${publicId}`).catch(err => {
+        console.error('Cloudinary delete error:', err);
+        throw new Error(`Failed to delete image: ${err.message}`);
+      });
+      user.profileImage = null;
+      await user.save().catch(err => {
+        console.error('User save error:', err);
+        throw new Error(`Failed to save user: ${err.message}`);
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile image removed',
+      user: { ...user.toJSON(), password: undefined },
+    });
+  } catch (err) {
+    sendError(res, 500, 'Server error removing image', err);
+  }
+});
+
+module.exports = router;

@@ -1,8 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const dotenv = require("dotenv");
-const path = require('path');
+const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/tasks');
 const userRoutes = require('./routes/user');
@@ -14,23 +13,16 @@ const app = express();
 app.use(express.json());
 
 const corsOptions = {
-    origin: "https://hassanahmedtaskmanager.vercel.app", // Frontend URL
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+  origin: 'http://localhost:5173', // Frontend URL
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
 
-
 app.use(express.urlencoded({ extended: true }));
 
-// Static files middleware for uploaded images
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-
-// Import transporter from auth
-const { transporter } = require('./routes/auth');
-
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/user', userRoutes);
@@ -41,7 +33,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({
     success: false,
     message: 'Something went wrong on the server',
-    error: process.env.NODE_ENV === 'production' ? null : err.message
+    error: process.env.NODE_ENV === 'production' ? null : err.message,
   });
 });
 
@@ -49,32 +41,22 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: `Route not found: ${req.method} ${req.originalUrl}`
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
   });
 });
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('Connected to MongoDB');
-    
+
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log("Verifying transporter...");
-      if (transporter) {
-        transporter.verify((error, success) => {
-          if (error) {
-            console.error('Email Transport Error:', error);
-          } else {
-            console.log('Server is ready to send emails');
-          }
-        });
-      }
-      
     });
   })
-  .catch(err => {
+  .catch((err) => {
     console.error('MongoDB connection error:', err);
     process.exit(1);
   });
